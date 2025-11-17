@@ -46,9 +46,21 @@ func (t *Translator) File(f *syntax.File) (err error) {
 		}
 	}()
 
-	for _, stmt := range f.Stmts {
+	for i, stmt := range f.Stmts {
 		t.stmt(stmt)
 		t.nl()
+
+		isLast := i == len(f.Stmts)-1
+		_, ok := stmt.Cmd.(*syntax.FuncDecl)
+
+		if ok && !isLast {
+			currentEnd := stmt.End()
+			nextPos := f.Stmts[i+1].Pos()
+
+			if currentEnd.Line() < nextPos.Line()-1 {
+				t.nl()
+			}
+		}
 	}
 
 	for _, comment := range f.Last {
@@ -189,20 +201,25 @@ func (t *Translator) command(c syntax.Command) {
 			unsupported(c)
 		}
 		t.str("for ")
+
 		switch l := c.Loop.(type) {
 		case *syntax.WordIter:
-			t.printf("%s in", l.Name.Value)
+			t.printf("%s", l.Name.Value)
+
 			if l.InPos.IsValid() {
+				t.str(" in")
 				for _, w := range l.Items {
 					t.str(" ")
 					t.word(w, false)
 				}
 			} else {
-				unsupported(c)
+				t.str(" in $argv")
 			}
+
 		default:
 			unsupported(c)
 		}
+
 		t.indent()
 		t.body(c.Do...)
 		t.outdent()
@@ -739,9 +756,7 @@ func (t *Translator) paramExp(p *syntax.ParamExp, quoted bool) {
 			if err != nil {
 				unsupported(p)
 			}
-      if strings.HasPrefix(expr, "(?s)") {
-        expr = expr[4:]
-      }
+			expr = strings.TrimPrefix(expr, "(?s)")
 			dot := ""
 			if isPath && (suffix && strings.HasSuffix(expr, ":") || !suffix && strings.HasPrefix(expr, ":")) {
 				dot = `\.?`

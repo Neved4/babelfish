@@ -235,6 +235,7 @@ function chruby_reset
   set -e RUBY_ROOT; set -e RUBY_ENGINE; set -e RUBY_VERSION; set -e RUBYOPT; set -e GEM_ROOT
   true
 end
+
 function chruby_use
   if test ! -x $argv[1]'/bin/ruby'
     echo 'chruby: '$argv[1]'/bin/ruby not executable' >&2
@@ -256,6 +257,7 @@ begin; require \'rubygems\'; puts "export GEM_ROOT=#{Gem.default_dir.inspect};";
   end
   true
 end
+
 function chruby
   switch $argv[1]
   case '-h' '--help'
@@ -337,11 +339,15 @@ set -Cefu
 set -- x y z
 set - x y z
 unset ASPELL_CONF
-for i in a b c ; do
+for i in a b c; do
   if [ -d "$i/lib/aspell" ]; then
     export ASPELL_CONF="dict-dir $i/lib/aspell"
   fi
   echo yes
+done
+for cmd
+do
+  echo "$cmd"
 done
 time sleep 1
 while true; do
@@ -404,6 +410,9 @@ for i in a b c
     set -gx ASPELL_CONF 'dict-dir '"$i"'/lib/aspell'
   end
   echo yes
+end
+for cmd in $argv
+  echo "$cmd"
 end
 time sleep 1
 while true
@@ -601,6 +610,7 @@ several packages. You can install it by typing one of the following:
   # command not found should always exit with 127
   return 127
 end
+
 # for zsh...
 # we just pass it to the bash handler above
 # apparently they work identically
