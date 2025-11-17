@@ -448,7 +448,18 @@ func (t *Translator) parseSetExpr(args []*syntax.Word) bool {
 
 	next, _ := lit(args[1])
 
-	if (next == "--" || next == "-") {
+	if next == "--" || next == "-" {
+		if len(args) >= 3 && isAtWord(args[len(args)-1]) {
+			if len(args) > 3 {
+				t.str("set -a argv")
+				for _, arg := range args[2 : len(args)-1] {
+					t.str(" ")
+					t.word(arg, false)
+				}
+			}
+			return true
+		}
+
 		t.str("set argv")
 		for _, arg := range args[2:] {
 			t.str(" ")
@@ -464,6 +475,21 @@ func (t *Translator) parseSetExpr(args []*syntax.Word) bool {
 		}
 	}
 	return true
+}
+
+func isAtWord(w *syntax.Word) bool {
+	if len(w.Parts) != 1 {
+		return false
+	}
+	dq, ok := w.Parts[0].(*syntax.DblQuoted)
+	if !ok || len(dq.Parts) != 1 {
+		return false
+	}
+	param, ok := dq.Parts[0].(*syntax.ParamExp)
+	if !ok {
+		return false
+	}
+	return param.Param.Value == "@"
 }
 
 func (t *Translator) callExpr(c *syntax.CallExpr) {
